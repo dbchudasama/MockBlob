@@ -10,12 +10,18 @@ using Microsoft.WindowsAzure.Storage.Blob; //Namespace for Blob storage types
 using Newtonsoft.Json;
 using System.IO;
 using Microsoft.Azure.EventHubs;
+//using System.Threading;
+using System.Timers;
+using System.Threading;
 
 namespace MockBlob
 {
 	class Program
 	{
 		private static EventHubClient eventHubClient;
+		private const string EhConnectionString = "Endpoint=sb://mockprojecteventhub.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=H3os8VWVeNnfsw/falSQQAkhQMRPoSelsjKvAHbkJhI=";
+		private const string EhEntityPath = "mockprojecteventhub";
+
 
 		static void Main(string[] args)
 		{
@@ -34,16 +40,26 @@ namespace MockBlob
 			}
 
 			//Calling method to do the message processing to Event Hub
+
 			MainAsync(args).GetAwaiter().GetResult();
 		}
 
 
 		private static async Task MainAsync(string[] args)
 		{
+			// Creates an EventHubsConnectionStringBuilder object from the connection string, and sets the EntityPath.
+			// Typically, the connection string should have the entity path in it, but for the sake of this simple scenario
+			// we are using the connection string from the namespace.
+			var connectionStringBuilder = new EventHubsConnectionStringBuilder(EhConnectionString)
+			{
+				EntityPath = EhEntityPath
+			};
+
+			eventHubClient = EventHubClient.CreateFromConnectionString(connectionStringBuilder.ToString());
 			//Using external package Newtonsoft.json to read in the downloaded blob file and then deserialize the JSON as a list of type x
 			//Read File into List and Deserialise JSON to type 'Airline'
 			var airline = JsonConvert.DeserializeObject<List<Airline>>(File.ReadAllText(@"./blobDownload.json"));
-
+			 
 			//Calling Method to send messages to Event Hub
 			await SendMessagesToEventHub(airline);
 
@@ -61,22 +77,22 @@ namespace MockBlob
 		private static async Task SendMessagesToEventHub(List<Airline> air)
 		{
 			//Looping through JSON Deserialised Objects with an increment of +1
-			foreach (var a in air)
+			for(var a = 0; a < air.Count; a++)
 			{
 				//Try Catch statement in order to be able to catch any exceptions
 				try
 				{
-					var message = $"Message {a}"; //Message is incremented by 1
+					var message = $"{a}"; //Message is incremented by 1
 					Console.WriteLine($"Sending message: {message}");
+
+					//Time interval - 0.5 secs = 500 milliseconds
+					System.Threading.Thread.Sleep(500);
 					await eventHubClient.SendAsync(new EventData(Encoding.UTF8.GetBytes(message)));
 				}
 				catch (Exception exception)
 				{
 					Console.WriteLine($"{DateTime.Now} > Exception: {exception.Message}");
 				}
-
-				//Time interval - 0.5 secs
-				await Task.Delay(TimeSpan.FromSeconds(0.5));
 			}
 		}
 	}
