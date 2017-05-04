@@ -83,10 +83,10 @@ namespace MockBlob
                     var message = JsonConvert.SerializeObject(entry);
                     Console.WriteLine($"Sending message: {message}");
 
-                    //Time interval - 0.5 secs = 500 milliseconds
-                    System.Threading.Thread.Sleep(500);
                     await eventHubClient.SendAsync(new EventData(Encoding.UTF8.GetBytes(message)));
-                }
+					//Time interval - 0.5 secs = 500 milliseconds
+					System.Threading.Thread.Sleep(500);
+				}
                 catch (Exception exception)
                 {
                     Console.WriteLine($"{DateTime.Now} > Exception: {exception.Message}");
