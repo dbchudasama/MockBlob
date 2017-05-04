@@ -20,7 +20,7 @@ namespace MockBlob
 	{
 		private static EventHubClient eventHubClient;
 		private const string EhConnectionString = "Endpoint=sb://mockprojecteventhub.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=H3os8VWVeNnfsw/falSQQAkhQMRPoSelsjKvAHbkJhI=";
-		private const string EhEntityPath = "mockprojecteventhub";
+		private const string EhEntityPath = "mockprojecteventhubdemo";
 
 
 		static void Main(string[] args)
@@ -76,24 +76,23 @@ namespace MockBlob
 		//Creates an Event Hub client and sends messages to the event hub every 0.5 seconds.
 		private static async Task SendMessagesToEventHub(List<Airline> air)
 		{
-			//Looping through JSON Deserialised Objects with an increment of +1
-			for(var a = 0; a < air.Count; a++)
-			{
-				//Try Catch statement in order to be able to catch any exceptions
-				try
-				{
-					var message = $"{a}"; //Message is incremented by 1
-					Console.WriteLine($"Sending message: {message}");
+            air.ForEach(async (entry) =>
+            {
+                try
+                {
+                    var message = JsonConvert.SerializeObject(entry);
+                    Console.WriteLine($"Sending message: {message}");
 
-					//Time interval - 0.5 secs = 500 milliseconds
-					System.Threading.Thread.Sleep(500);
-					await eventHubClient.SendAsync(new EventData(Encoding.UTF8.GetBytes(message)));
-				}
-				catch (Exception exception)
-				{
-					Console.WriteLine($"{DateTime.Now} > Exception: {exception.Message}");
-				}
-			}
+                    //Time interval - 0.5 secs = 500 milliseconds
+                    System.Threading.Thread.Sleep(500);
+                    await eventHubClient.SendAsync(new EventData(Encoding.UTF8.GetBytes(message)));
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine($"{DateTime.Now} > Exception: {exception.Message}");
+                }
+            });
+	
 		}
 	}
 }
