@@ -1,0 +1,18 @@
+﻿
+REFERENCE ASSEMBLY [Newtonsoft.Json.dll];
+REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
+
+//Define schema of file, must map all columns
+ @myRecords =
+    EXTRACT
+        code string,
+	    name string 	
+    FROM @"/Samples/Data/test.json"
+    USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
+
+    @testthis = SELECT code, name
+                FROM @myRecords;
+
+    OUTPUT @testthis
+    TO "/Samples/Data/TestOutput.csv"
+    USING Outputters.Csv();
