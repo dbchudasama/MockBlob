@@ -49,7 +49,8 @@ REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
         eventenqueuedutctime string
     FROM @"/Samples/Data/Airline.json" USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
 
-@parseairportandflight = SELECT Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(airport).Values AS airport_array, 
+@parseairportandflight = SELECT Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(airport).Values AS airport_array
+                         /*,     
                          code, 
                          name,
                          Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(statistics, "statistic[*]").Values AS stats_array,
@@ -74,15 +75,16 @@ REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
                          eventprocessorutctime,
                          partition,
                          eventenqueuedutctime 
+*/
                   FROM @json;
 
 
 @delayed_flights = SELECT //MAX(delayed) AS delayed,
-                          code, 
-                          name,
-                          Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(a_value) ["code"]AS airportCode,
+                          //code, 
+                          //name,
+                          Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(a_value)["code"] AS airportCode
                           //Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(c_value) ["code"]AS carrierCode
-                          Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(a_value) ["name"]AS airportName
+                          //Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(a_value) ["name"]AS airportName
                           //Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(c_value) ["name"]AS carrierName
                    FROM @parseairportandflight
                         CROSS APPLY

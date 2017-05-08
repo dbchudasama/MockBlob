@@ -1,0 +1,41 @@
+﻿REFERENCE ASSEMBLY [Newtonsoft.Json.dll];
+REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
+
+DECLARE @INPUT_FILE string = @"/Samples/Data/Airline.json";
+
+
+//Extract the different properties from the Json file using a JsonExtractor
+@json =
+    EXTRACT code string, name string, airports string //ppu string, batters string, topping string
+    FROM @INPUT_FILE
+    USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
+
+
+/*
+Batters and Toppings have nested Json in them, this script extracts the nested Json as SQL.MAPs and then gets their values in a SQL.ARRAY
+*/
+
+@parsebatterandtopping =
+    SELECT code , 
+           name ,
+           Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(airports).Values AS airport_arr
+    FROM @json;
+
+
+/*
+Use CROSS APPLY to generate a cartesian product of the various batters and toppings
+*/
+/*
+@cake_types =
+    SELECT code , 
+           name ,
+           Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(airports).Values AS airport_arr
+    FROM @json
+         CROSS APPLY
+            EXPLODE(airport_arr) AS t(a_value);
+*/
+
+
+OUTPUT @parsebatterandtopping
+TO "/Samples/Output/testAirport.csv"
+USING Outputters.Text();

@@ -23,11 +23,15 @@
   <ItemGroup>
     <Script Include="Script.usql" />
     <Script Include="Script2.usql" />
+    <Script Include="TestScript.usql" />
     <ScriptCode Include="Script.usql.cs">
       <DependentUpon>Script.usql</DependentUpon>
     </ScriptCode>
     <ScriptCode Include="Script2.usql.cs">
       <DependentUpon>Script2.usql</DependentUpon>
+    </ScriptCode>
+    <ScriptCode Include="TestScript.usql.cs">
+      <DependentUpon>TestScript.usql</DependentUpon>
     </ScriptCode>
   </ItemGroup>
   <ItemGroup>
