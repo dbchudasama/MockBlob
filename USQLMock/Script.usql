@@ -1,4 +1,4 @@
-﻿
+﻿/*
 REFERENCE ASSEMBLY [Newtonsoft.Json.dll];
 REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
 
@@ -16,3 +16,81 @@ REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
     OUTPUT @testthis
     TO "/Samples/Data/TestOutput.csv"
     USING Outputters.Csv();
+    */
+    
+REFERENCE ASSEMBLY [Newtonsoft.Json.dll];
+REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats]; 
+
+@json = 
+    EXTRACT 
+        airport string,
+        code string,
+        name string,
+        statistics string,
+        flights string,
+        cancelled int,
+        [on time] int,
+        total int,
+        delayed int,
+        diverted int,
+        [# of delays] string,
+        [late aircraft] int,
+        weather int,
+        security int,
+        [national aviation system] int,
+        carrier string,
+        [minutes delayed] string,
+        time string,
+        label string,
+        year int,
+        month int,
+        eventprocessorutctime string,
+        partition int,
+        eventenqueuedutctime string
+    FROM @"/Samples/Data/Airline.json" USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
+
+@parseairportandflight = SELECT Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(airport).Values AS airport_array, 
+                         code, 
+                         name,
+                         Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(statistics, "statistic[*]").Values AS stats_array,
+                         Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(flights).Values AS flights_array,
+                         cancelled,
+                         [on time],
+                         total,
+                         delayed,
+                         diverted,
+                         Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple([# of delays]).Values AS delays_array,
+                         [late aircraft],
+                         weather,
+                         security,
+                         [national aviation system],       
+                         carrier,
+                         Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple([minutes delayed]).Values AS minsDelayed_array,
+                         Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(time).Values AS time_array,   
+                         label,
+                         year,
+                         month,
+                         Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(carrier).Values AS carrier_array,   
+                         eventprocessorutctime,
+                         partition,
+                         eventenqueuedutctime 
+                  FROM @json;
+
+
+@delayed_flights = SELECT //MAX(delayed) AS delayed,
+                          code, 
+                          name,
+                          Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(a_value) ["code"]AS airportCode,
+                          //Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(c_value) ["code"]AS carrierCode
+                          Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(a_value) ["name"]AS airportName
+                          //Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(c_value) ["name"]AS carrierName
+                   FROM @parseairportandflight
+                        CROSS APPLY
+                            EXPLODE(airport_array) AS t(a_value);
+                       //CROSS APPLY
+                            //EXPLODE(carrier_array) AS T(c_value);
+                   //GROUP BY code, name, Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(a_value), Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(c_value);
+                           
+OUTPUT @delayed_flights
+TO @"/Samples/Output/flightDelays.tsv"
+USING Outputters.Tsv(quoting : false);
