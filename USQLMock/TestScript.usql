@@ -28,7 +28,8 @@ USING Outputters.Tsv(quoting : false);
         airport string,
         statistics string,
         time string,
-        carrier string
+        carrier string,
+        all string
         //flights string
         //code string,
         //name string,
@@ -36,21 +37,28 @@ USING Outputters.Tsv(quoting : false);
     FROM @"/Samples/Data/Airline.json" USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
 
 @test = SELECT Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(airport) AS airport,
-               Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(statistics, "$..delayed") AS stats_array,
+               Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(statistics, "$.flights.*") AS flights,
                Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(carrier) AS carrier,
                Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(time) AS time
         FROM @json;
 
-@test2 = SELECT airport["code"] AS code, 
-                airport["name"] AS name,
-                node_value AS delayed,//delayed["flights.cancelled"] AS delayed
-                carrier["name"] AS airline,
-                time["label"] AS time
-         FROM @test
-            CROSS APPLY
-                EXPLODE(stats_array) AS T(name, node_value);
-         //GROUP BY airport["name"], airport["code"], stats["flights"], carrier["name"], time["label"];
+@test2 = SELECT MAX(flights["flights.delayed"]) AS delayed,
+                //airport["code"] AS code, 
+                //airport["name"] AS name,
+                //flights["flights.delayed"] AS delayed,
+                carrier["name"] AS airline
+                //time["label"] AS time
+         FROM @test;
+         //GROUP BY airport["name"], airport["code"], carrier["name"], time["label"];
 
-OUTPUT @test2
-TO @"/Samples/Output/outStatsTest5.tsv"
-USING Outputters.Tsv(quoting : false);
+@test3 = SELECT carrier["name"], flights["flights.delayed"]
+         FROM @test
+         JOIN (SELECT DISTINCT carrier["name"] AS Carrier, MAX(flights["flights.delayed"]) AS MaxDelay
+               FROM @test
+               GROUP BY carrier["name"]) AS Airline 
+         ON carrier["carrier.name"] == Airline["carrier.name"]
+         AND flights["flights.delayed"] == Airline["flights.delayed"];
+                
+OUTPUT @test3
+TO @"/Samples/Output/outStatsTest6.tsv"
+USING Outputters.Tsv(outputHeader: true, quoting : false);
