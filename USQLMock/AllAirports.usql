@@ -1,0 +1,21 @@
+﻿REFERENCE ASSEMBLY [Newtonsoft.Json.dll];
+REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
+
+DECLARE @INPUT_FILE string = @"/Samples/Data/Airline.json";
+
+@json = 
+    EXTRACT 
+        airport string
+    FROM @"/Samples/Data/Airline.json" USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
+
+@test = SELECT Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(airport) AS airport
+        FROM @json;
+
+@test2 = SELECT airport["code"] AS code, 
+                airport["name"] AS name
+         FROM @test;
+         //GROUP BY airport["name"], airport["code"], stats["flights"], carrier["name"], time["label"];
+
+OUTPUT @test2
+TO @"/Samples/Output/allAirports.tsv"
+USING Outputters.Tsv(quoting : false);

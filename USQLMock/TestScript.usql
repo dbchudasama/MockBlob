@@ -28,21 +28,29 @@ USING Outputters.Tsv(quoting : false);
         airport string,
         statistics string,
         time string,
-        carrier string,
-        code string,
-        name string
+        carrier string
+        //flights string
+        //code string,
+        //name string,
+       // airline string
     FROM @"/Samples/Data/Airline.json" USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
 
 @test = SELECT Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(airport) AS airport,
-               Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(statistics) AS stats
+               Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(statistics, "$..delayed") AS stats_array,
+               Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(carrier) AS carrier,
+               Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(time) AS time
         FROM @json;
 
 @test2 = SELECT airport["code"] AS code, 
                 airport["name"] AS name,
-                stats["flights"] AS flights
+                node_value AS delayed,//delayed["flights.cancelled"] AS delayed
+                carrier["name"] AS airline,
+                time["label"] AS time
          FROM @test
-         GROUP BY airport["name"], airport["code"], stats["flights"];
+            CROSS APPLY
+                EXPLODE(stats_array) AS T(name, node_value);
+         //GROUP BY airport["name"], airport["code"], stats["flights"], carrier["name"], time["label"];
 
 OUTPUT @test2
-TO @"/Samples/Output/outStatsTest.tsv"
+TO @"/Samples/Output/outStatsTest5.tsv"
 USING Outputters.Tsv(quoting : false);
