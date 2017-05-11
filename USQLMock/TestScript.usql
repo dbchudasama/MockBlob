@@ -1,7 +1,7 @@
-﻿REFERENCE ASSEMBLY [Newtonsoft.Json.dll];
+﻿REFERENCE ASSEMBLY [Newtonsoft.Json];
 REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
 
-DECLARE @INPUT_FILE string = @"/Samples/Data/Airline.json";
+DECLARE @INPUT_FILE string = @"/Airline.json";
 
 /*
 @json = 
@@ -34,23 +34,44 @@ USING Outputters.Tsv(quoting : false);
         //code string,
         //name string,
        // airline string
-    FROM @"/Samples/Data/Airline.json" USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
+    FROM @INPUT_FILE USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
 
 @test = SELECT Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(airport) AS airport,
-               Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(statistics, "$.flights.*") AS flights,
+               Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(statistics, "$.flights.*", "$['# of delays'].*", "$.['minutes delayed'].*") AS flights,
                Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(carrier) AS carrier,
                Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(time) AS time
         FROM @json;
 
-@test2 = SELECT MAX(flights["flights.delayed"]) AS delayed,
-                //airport["code"] AS code, 
-                //airport["name"] AS name,
-                //flights["flights.delayed"] AS delayed,
-                carrier["name"] AS airline
-                //time["label"] AS time
+//Flattening out the JSON Objects into a table structure making it simple to read
+@test2 = SELECT airport["code"] AS airportCode, 
+                airport["name"] AS airport,
+                flights["flights.cancelled"] AS cancelled,
+                flights["flights['on time']"] AS onTime,
+                flights["flights.total"] AS total,
+                flights["flights.delayed"] AS delayed,
+                flights["flights.diverted"] AS diverted,
+                flights["['# of delays']['late aircraft']"] AS lateAircraft,
+                flights["['# of delays'].weather"] AS weather,
+                flights["['# of delays'].security"] AS security,
+                flights["['# of delays']['national aviation system']"] AS nas,
+                flights["['# of delays'].carrier"] AS carrier, 
+                flights["['minutes delayed']['late aircraft']"] AS mdlateAircraft,
+                flights["['minutes delayed'].weather"] AS ndweather,
+                flights["['minutes delayed'].carrier"] AS mdCarrier,
+                flights["['minutes delayed'].security"] AS mdSecurity,
+                flights["['minutes delayed'].total"] AS mdTotal,
+                flights["['minutes delayed'][national aviation system']"] AS mdNas,
+                time["label"] AS label,
+                time["year"] AS year,
+                time["month"] AS month,
+                carrier["code"] AS airlineCode,
+                carrier["name"] AS airline 
          FROM @test;
+            //CROSS APPLY
+                //EXPLODE(flights) AS t(m_value);
          //GROUP BY airport["name"], airport["code"], carrier["name"], time["label"];
 
+/*
 @test3 = SELECT carrier["name"], flights["flights.delayed"]
          FROM @test
          JOIN (SELECT DISTINCT carrier["name"] AS Carrier, MAX(flights["flights.delayed"]) AS MaxDelay
@@ -58,7 +79,8 @@ USING Outputters.Tsv(quoting : false);
                GROUP BY carrier["name"]) AS Airline 
          ON carrier["carrier.name"] == Airline["carrier.name"]
          AND flights["flights.delayed"] == Airline["flights.delayed"];
-                
-OUTPUT @test3
-TO @"/Samples/Output/outStatsTest6.tsv"
-USING Outputters.Tsv(outputHeader: true, quoting : false);
+*/
+
+OUTPUT @test2
+TO @"/all.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
