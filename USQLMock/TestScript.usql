@@ -42,45 +42,90 @@ USING Outputters.Tsv(quoting : false);
                Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(time) AS time
         FROM @json;
 
+
 //Flattening out the JSON Objects into a table structure making it simple to read
-@test2 = SELECT airport["code"] AS airportCode, 
+@flightData = SELECT airport["code"] AS airportCode, 
                 airport["name"] AS airport,
-                flights["flights.cancelled"] AS cancelled,
-                flights["flights['on time']"] AS onTime,
-                flights["flights.total"] AS total,
-                flights["flights.delayed"] AS delayed,
-                flights["flights.diverted"] AS diverted,
-                flights["['# of delays']['late aircraft']"] AS lateAircraft,
-                flights["['# of delays'].weather"] AS weather,
-                flights["['# of delays'].security"] AS security,
-                flights["['# of delays']['national aviation system']"] AS nas,
-                flights["['# of delays'].carrier"] AS carrier, 
-                flights["['minutes delayed']['late aircraft']"] AS mdlateAircraft,
-                flights["['minutes delayed'].weather"] AS ndweather,
-                flights["['minutes delayed'].carrier"] AS mdCarrier,
-                flights["['minutes delayed'].security"] AS mdSecurity,
-                flights["['minutes delayed'].total"] AS mdTotal,
-                flights["['minutes delayed'][national aviation system']"] AS mdNas,
+                int.Parse(flights["flights.cancelled"]) AS cancelled,
+                int.Parse(flights["flights['on time']"]) AS onTime,
+                int.Parse(flights["flights.total"]) AS total,
+                int.Parse(flights["flights.delayed"]) AS delayed,
+                int.Parse(flights["flights.diverted"]) AS diverted,
+                int.Parse(flights["['# of delays']['late aircraft']"]) AS lateAircraft,
+                int.Parse(flights["['# of delays'].weather"]) AS weather,
+                int.Parse(flights["['# of delays'].security"]) AS security,
+                int.Parse(flights["['# of delays']['national aviation system']"]) AS nas,
+                int.Parse(flights["['# of delays'].carrier"]) AS carrier, 
+                int.Parse(flights["['minutes delayed']['late aircraft']"]) AS mdlateAircraft,
+                int.Parse(flights["['minutes delayed'].weather"]) AS mdweather,
+                int.Parse(flights["['minutes delayed'].carrier"]) AS mdCarrier,
+                int.Parse(flights["['minutes delayed'].security"]) AS mdSecurity,
+                int.Parse(flights["['minutes delayed'].total"]) AS mdTotal,
+                int.Parse(flights["['minutes delayed'][national aviation system']"]) AS mdNas,
                 time["label"] AS label,
-                time["year"] AS year,
+                int.Parse(time["year"]) AS year,
                 time["month"] AS month,
                 carrier["code"] AS airlineCode,
                 carrier["name"] AS airline 
          FROM @test;
-            //CROSS APPLY
-                //EXPLODE(flights) AS t(m_value);
-         //GROUP BY airport["name"], airport["code"], carrier["name"], time["label"];
 
-/*
-@test3 = SELECT carrier["name"], flights["flights.delayed"]
-         FROM @test
-         JOIN (SELECT DISTINCT carrier["name"] AS Carrier, MAX(flights["flights.delayed"]) AS MaxDelay
-               FROM @test
-               GROUP BY carrier["name"]) AS Airline 
-         ON carrier["carrier.name"] == Airline["carrier.name"]
-         AND flights["flights.delayed"] == Airline["flights.delayed"];
-*/
 
-OUTPUT @test2
-TO @"/all.csv"
+//@avgDelay = SELECT DISTINCT airline, AVG(delayed) AS avgDelayed
+//         FROM @flightData
+//         GROUP BY airline;
+//
+//
+//@maxDelay = SELECT DISTINCT airline, MAX(delayed) AS maxDelayed
+//         FROM @flightData
+//         GROUP BY airline;
+//
+//
+//@avgDelayMonthly = SELECT DISTINCT airline, AVG(delayed) AS avgDelayed, year, month
+//         FROM @flightData
+//         GROUP BY airline, year, month;
+//
+//
+//@maxDelayMonthly = SELECT DISTINCT airline, MAX(delayed) AS maxDelayed, year, month
+//         FROM @flightData
+//         GROUP BY airline, year, month;
+
+//@maxLateAircraftsYear = SELECT DISTINCT airline, MAX(lateAircraft) AS maxLateAircrafts, year
+//         FROM @flightData
+//         GROUP BY airline, year;
+
+//@avgDelayMinutes = SELECT DISTINCT airline, AVG(mdTotal) AS averageDelayMinutes
+//         FROM @flightData
+//         GROUP BY airline;
+   
+   
+//@avgDelayMinutesMonthly = SELECT DISTINCT airline, AVG(mdTotal) AS averageDelayMinutes, year, month
+//         FROM @flightData
+//         GROUP BY airline, year, month;
+
+
+//@percentageLateOnTime = SELECT DISTINCT airline, ((MAX(delayed)*100.0 /MAX(onTime)))AS percantageLateAgainstOnTime, year, month
+//           FROM @flightData
+//           GROUP BY airline, year, month;
+
+//@airportMostDelaysMonthly = SELECT DISTINCT airport, MAX(delayed) AS maxDelays, year, month
+//             FROM @flightData
+//             GROUP BY airport, year, month;
+
+
+//@weatherDelays = SELECT DISTINCT airline, MAX(weather)AS numberofDelaysByWeather, MAX(mdweather)AS minutesDelayedbyWeather, year, month
+//        FROM @flightData
+//        GROUP BY airline, year, month;
+
+//@percentageWeatherTotal = SELECT DISTINCT airline, ((MAX(mdweather)*100.0 /MAX(mdTotal)))AS percantageWeatherAgainstTotalDelays, year, month
+//           FROM @flightData
+//           GROUP BY airline, year, month;
+
+@percentageSecurityTotal = SELECT DISTINCT airline, ((MAX(mdSecurity)*100.0/MAX(mdTotal)))AS percantageSecurityAgainstTotalDelays, year, month
+           FROM @flightData
+           GROUP BY airline, year, month;
+
+@percentageTest = SELECT DISTINCT airline, 
+
+OUTPUT @percentageSecurityTotal
+TO @"/flightsPercentageSecurityTotal.csv"
 USING Outputters.Csv(outputHeader: true, quoting : true);
