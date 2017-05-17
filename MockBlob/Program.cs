@@ -19,8 +19,8 @@ namespace MockBlob
 	class Program
 	{
 		private static EventHubClient eventHubClient;
-		private const string EhConnectionString = "Endpoint=sb://mockprojecteventhub.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=H3os8VWVeNnfsw/falSQQAkhQMRPoSelsjKvAHbkJhI=";
-		private const string EhEntityPath = "mockprojecteventhubdemo";
+		private const string EhConnectionString = "Endpoint=sb://mockprojecteventhub2.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=uud9P5fYfkSvqhV0+Y/zEjBNDmjjhUqHQdQKK1lsEKk=";
+		private const string EhEntityPath = "mockprojecteventhubdemo2";
 
 
 		static void Main(string[] args)
@@ -32,7 +32,7 @@ namespace MockBlob
 			//Retrieve reference to the created container 'input'
 			CloudBlobContainer container = blobClient.GetContainerReference("input");
 			//Retrieve reference to the file arilines[2].json inside the container
-			CloudBlockBlob blockBob = container.GetBlockBlobReference("airlines[2].json");
+			CloudBlockBlob blockBob = container.GetBlockBlobReference("airlines.json");
 			//Save blob contents to a file (Download)
 			using (var fileStream = System.IO.File.OpenWrite(@"./blobDownload.json"))
 			{
@@ -40,7 +40,6 @@ namespace MockBlob
 			}
 
 			//Calling method to do the message processing to Event Hub
-
 			MainAsync(args).GetAwaiter().GetResult();
 		}
 
@@ -76,23 +75,27 @@ namespace MockBlob
 		//Creates an Event Hub client and sends messages to the event hub every 0.5 seconds.
 		private static async Task SendMessagesToEventHub(List<Airline> air)
 		{
-            air.ForEach(async (entry) =>
-            {
-                try
-                {
-                    var message = JsonConvert.SerializeObject(entry);
-                    Console.WriteLine($"Sending message: {message}");
+			//While loop for continous action execution
+			while (true)
+			{
+				air.ForEach(async (entry) =>
+				{
+					try
+					{
+						var message = JsonConvert.SerializeObject(entry);
+						Console.WriteLine($"Sending message: {message}");
 
-                    await eventHubClient.SendAsync(new EventData(Encoding.UTF8.GetBytes(message)));
+						await eventHubClient.SendAsync(new EventData(Encoding.UTF8.GetBytes(message)));
 					//Time interval - 0.5 secs = 500 milliseconds
 					System.Threading.Thread.Sleep(500);
-				}
-                catch (Exception exception)
-                {
-                    Console.WriteLine($"{DateTime.Now} > Exception: {exception.Message}");
-                }
-            });
-	
+					}
+					catch (Exception exception)
+					{
+						Console.WriteLine($"{DateTime.Now} > Exception: {exception.Message}");
+					}
+				});
+			}
 		}
 	}
 }
+ 
