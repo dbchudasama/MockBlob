@@ -21,25 +21,13 @@
     <OutputPath>bin\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <Script Include="allAirlines.usql" />
-    <Script Include="AllAirports.usql" />
-    <Script Include="Script.usql" />
-    <Script Include="Script2.usql" />
-    <Script Include="TestScript.usql" />
-    <ScriptCode Include="allAirlines.usql.cs">
-      <DependentUpon>allAirlines.usql</DependentUpon>
+    <Script Include="Mock.usql" />
+    <Script Include="MockProjectScript.usql" />
+    <ScriptCode Include="Mock.usql.cs">
+      <DependentUpon>Mock.usql</DependentUpon>
     </ScriptCode>
-    <ScriptCode Include="AllAirports.usql.cs">
-      <DependentUpon>AllAirports.usql</DependentUpon>
-    </ScriptCode>
-    <ScriptCode Include="Script.usql.cs">
-      <DependentUpon>Script.usql</DependentUpon>
-    </ScriptCode>
-    <ScriptCode Include="Script2.usql.cs">
-      <DependentUpon>Script2.usql</DependentUpon>
-    </ScriptCode>
-    <ScriptCode Include="TestScript.usql.cs">
-      <DependentUpon>TestScript.usql</DependentUpon>
+    <ScriptCode Include="MockProjectScript.usql.cs">
+      <DependentUpon>MockProjectScript.usql</DependentUpon>
     </ScriptCode>
   </ItemGroup>
   <ItemGroup>

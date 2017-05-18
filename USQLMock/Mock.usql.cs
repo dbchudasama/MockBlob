@@ -8,7 +8,7 @@ using System.Text;
 
 namespace USQLMock
 {
-	public class Udfs
+	public class MyUdfs
 	{
 		//<summary>
 		//calculatePercentage(SqlMap flattened 'Key' as an int. Consider using 'int.Parse(<key>), SqlMap flattened 'Key' as an int. Consider using 'int.Parse(<key>)) 
@@ -25,4 +25,5 @@ namespace USQLMock
 
 		}
 	}
+
 }

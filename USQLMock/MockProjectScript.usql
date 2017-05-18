@@ -1,0 +1,157 @@
+﻿REFERENCE ASSEMBLY [Newtonsoft.Json.dll];
+REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
+
+DECLARE @INPUT_FILE string = @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/DataSet1.json";
+
+@json = 
+    EXTRACT 
+        airport string,
+        statistics string,
+        time string,
+        carrier string
+    FROM @INPUT_FILE USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
+
+@test = SELECT Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(airport) AS airport,
+               Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(statistics, "$.flights.*", "$['# of delays'].*", "$.['minutes delayed'].*") AS flights,
+               Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(carrier) AS carrier,
+               Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(time) AS time
+        FROM @json;
+
+
+//Flattening out the JSON Objects into a table structure making it simple to read
+@flightData = SELECT airport["code"] AS airportCode, 
+                airport["name"] AS airport,
+                int.Parse(flights["flights.cancelled"]) AS cancelled,
+                int.Parse(flights["flights['on time']"]) AS onTime,
+                int.Parse(flights["flights.total"]) AS total,
+                int.Parse(flights["flights.delayed"]) AS delayed,
+                int.Parse(flights["flights.diverted"]) AS diverted,
+                int.Parse(flights["['# of delays']['late aircraft']"]) AS lateAircraft,
+                int.Parse(flights["['# of delays'].weather"]) AS weather,
+                int.Parse(flights["['# of delays'].security"]) AS security,
+                int.Parse(flights["['# of delays']['national aviation system']"]) AS nas,
+                int.Parse(flights["['# of delays'].carrier"]) AS carrier, 
+                int.Parse(flights["['minutes delayed']['late aircraft']"]) AS mdlateAircraft,
+                int.Parse(flights["['minutes delayed'].weather"]) AS mdweather,
+                int.Parse(flights["['minutes delayed'].carrier"]) AS mdCarrier,
+                int.Parse(flights["['minutes delayed'].security"]) AS mdSecurity,
+                int.Parse(flights["['minutes delayed'].total"]) AS mdTotal,
+                int.Parse(flights["['minutes delayed']['national aviation system']"]) AS mdNas,
+                time["label"] AS label,
+                int.Parse(time["year"]) AS year,
+                time["month"] AS month,
+                carrier["code"] AS airlineCode,
+                carrier["name"] AS airline 
+         FROM @test;
+
+OUTPUT @flightData
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/flightDataAll.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+
+
+@avgDelay = SELECT DISTINCT airline, AVG(delayed) AS avgDelayed
+         FROM @flightData
+         GROUP BY airline;
+
+OUTPUT @avgDelay
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/avgDelay.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+
+
+@maxDelay = SELECT DISTINCT airline, MAX(delayed) AS maxDelayed
+         FROM @flightData
+         GROUP BY airline;
+
+OUTPUT @maxDelay
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/maxDelay.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+
+
+@avgDelayMonthly = SELECT DISTINCT airline, AVG(delayed) AS avgDelayed, year, month
+         FROM @flightData
+         GROUP BY airline, year, month;
+
+OUTPUT @avgDelayMonthly
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/avgDelayMonthly.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+
+
+@maxDelayMonthly = SELECT DISTINCT airline, MAX(delayed) AS maxDelayed, year, month
+         FROM @flightData
+         GROUP BY airline, year, month;
+
+OUTPUT @maxDelayMonthly
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/maxDelayMonthly.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+
+
+@maxLateAircraftsYear = SELECT DISTINCT airline, MAX(lateAircraft) AS maxLateAircrafts, year
+         FROM @flightData
+         GROUP BY airline, year;
+
+OUTPUT @maxLateAircraftsYear
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/maxLateAircraftsYear.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+
+
+@avgDelayMinutes = SELECT DISTINCT airline, AVG(mdTotal) AS averageDelayMinutes
+         FROM @flightData
+         GROUP BY airline;
+
+OUTPUT @avgDelayMinutes
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/avgDelayMinutes.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+ 
+ 
+@avgDelayMinutesMonthly = SELECT DISTINCT airline, AVG(mdTotal) AS averageDelayMinutes, year, month
+         FROM @flightData
+         GROUP BY airline, year, month;
+
+OUTPUT @avgDelayMinutesMonthly
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/avgDelayMinutesMonthly.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+
+
+@percentageLateOnTime = SELECT DISTINCT airline, ((MAX(delayed)*100.0 /MAX(onTime)))AS percantageLateAgainstOnTime, year, month
+           FROM @flightData
+           GROUP BY airline, year, month;
+
+OUTPUT @percentageLateOnTime
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/percentagLateOnTime.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+
+
+@airportMostDelaysMonthly = SELECT DISTINCT airport, MAX(delayed) AS maxDelays, year, month
+             FROM @flightData
+             GROUP BY airport, year, month;
+
+OUTPUT @airportMostDelaysMonthly
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/airportMostDelaysMonthly.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+
+
+@weatherDelays = SELECT DISTINCT airline, MAX(weather)AS numberofDelaysByWeather, MAX(mdweather)AS minutesDelayedbyWeather, year, month
+        FROM @flightData
+        GROUP BY airline, year, month;
+
+OUTPUT @weatherDelays
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/weatherDelays.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+
+
+@percentageWeatherTotal = SELECT DISTINCT airline, ((MAX(mdweather)*100.0 /MAX(mdTotal)))AS percantageWeatherAgainstTotalDelays, year, month
+           FROM @flightData
+           GROUP BY airline, year, month;
+
+OUTPUT @percentageWeatherTotal
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/percentageWeatherTotal.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+
+
+@percentageSecurityTotal = SELECT DISTINCT airline, ((MAX(mdSecurity)*100.0/MAX(mdTotal)))AS percantageSecurityAgainstTotalDelays, year, month
+           FROM @flightData
+           GROUP BY airline, year, month;
+
+OUTPUT @percentageSecurityTotal
+TO @"adl://mockprojectdatalakeouput.azuredatalakestore.net/streamanalytics/output/2017/05/17/percentageSecurityTotal.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);

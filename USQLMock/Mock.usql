@@ -3,33 +3,13 @@ REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
 
 DECLARE @INPUT_FILE string = @"/Airline.json";
 
-/*
 @json = 
     EXTRACT 
         airport string,
         statistics string,
         time string,
         carrier string
-    FROM @"/Samples/Data/Airline.json" USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
-
-@test = SELECT Microsoft.Analytics.Samples.Formats.Json.JsonFunctions.JsonTuple(statistics) AS stats
-        FROM @json;
-
-@test1 = SELECT stats["flights"] AS flights FROM @test;
-
-
-OUTPUT @test1
-TO @"/Samples/Output/testStats.tsv"
-USING Outputters.Tsv(quoting : false);
-*/
-
-@json = 
-    EXTRACT 
-        airport string,
-        statistics string,
-        time string,
-        carrier string,
-        all string
+        //all string
         //flights string
         //code string,
         //name string,
@@ -69,12 +49,20 @@ USING Outputters.Tsv(quoting : false);
                 carrier["name"] AS airline 
          FROM @test;
 
+OUTPUT @flightData
+TO @"/flightData.csv"
+USING Outputters.Csv(outputHeader: true, quoting : true);
+
 
 //@avgDelay = SELECT DISTINCT airline, AVG(delayed) AS avgDelayed
 //         FROM @flightData
 //         GROUP BY airline;
 //
-//
+//OUTPUT @avgDelay
+//TO @"/avgDelayTest.csv"
+//USING Outputters.Csv(outputHeader: true, quoting : true);
+
+
 //@maxDelay = SELECT DISTINCT airline, MAX(delayed) AS maxDelayed
 //         FROM @flightData
 //         GROUP BY airline;
@@ -120,12 +108,10 @@ USING Outputters.Tsv(quoting : false);
 //           FROM @flightData
 //           GROUP BY airline, year, month;
 
-@percentageSecurityTotal = SELECT DISTINCT airline, ((MAX(mdSecurity)*100.0/MAX(mdTotal)))AS percantageSecurityAgainstTotalDelays, year, month
-           FROM @flightData
-           GROUP BY airline, year, month;
-
-@percentageTest = SELECT DISTINCT airline, 
-
-OUTPUT @percentageSecurityTotal
-TO @"/flightsPercentageSecurityTotal.csv"
-USING Outputters.Csv(outputHeader: true, quoting : true);
+//@percentageSecurityTotal = SELECT DISTINCT airline, ((MAX(mdSecurity)*100.0/MAX(mdTotal)))AS percantageSecurityAgainstTotalDelays, year, month
+//           FROM @flightData
+//           GROUP BY airline, year, month;
+//
+//OUTPUT @percentageSecurityTotal
+//TO @"/flightsPercentageSecurityTotalTest.csv"
+//USING Outputters.Csv(outputHeader: true, quoting : true);
